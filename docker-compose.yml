@@ -1,0 +1,41 @@
+
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: gestion_db
+      POSTGRES_USER: gestion_user
+      POSTGRES_PASSWORD: gestion_pass
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - '5432:5432'
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - ./backend:/app
+    environment:
+      - DATABASE_URL=postgres://gestion_user:gestion_pass@postgres:5432/gestion_db
+    depends_on:
+      - postgres
+    ports:
+      - '8000:8000'
+
+  frontend:
+    build:
+      context: ./frontend
+    command: sh -c "npm install && npm run dev"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - '3000:3000'
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
